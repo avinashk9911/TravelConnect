@@ -26,11 +26,12 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- Spring WS — for WsConfig and WSDL auto-generation endpoint (optional here) -->
+        <!-- Spring WS core — for @EnableWs, DefaultWsdl11Definition, WSDL endpoint -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-ws</artifactId>
+            <groupId>org.springframework.ws</groupId>
+            <artifactId>spring-ws-core</artifactId>
         </dependency>
+        <!-- WSDL4J — needed by DefaultWsdl11Definition to serve the .wsdl file -->
         <dependency>
             <groupId>wsdl4j</groupId>
             <artifactId>wsdl4j</artifactId>

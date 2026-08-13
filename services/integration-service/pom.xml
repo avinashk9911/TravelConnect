@@ -57,15 +57,11 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
-        <!-- Spring WS (SOAP) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-ws</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.ws</groupId>
-            <artifactId>spring-ws-core</artifactId>
-        </dependency>
+        <!--
+            Spring WS NOT needed here — the CarSupplierAdapter builds SOAP envelopes
+            as plain XML strings and sends them via RestTemplate. The integration
+            service is a SOAP CLIENT only; it does not host any WS endpoints.
+        -->
 
         <!-- PostgreSQL driver -->
         <dependency>
@@ -89,13 +85,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
-        </dependency>
-
-        <!-- WSDL4J for spring-ws WSDL generation -->
-        <dependency>
-            <groupId>wsdl4j</groupId>
-            <artifactId>wsdl4j</artifactId>
-            <version>1.6.3</version>
         </dependency>
 
         <!-- ===== TEST SCOPE ===== -->
