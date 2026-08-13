@@ -1,0 +1,12 @@
+server:
+  port: 9002
+
+spring:
+  application:
+    name: hotel-supplier-mock
+
+logging:
+  level:
+    com.travelconnect: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [${spring.application.name}] %logger{36} - %msg%n"

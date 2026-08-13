@@ -1,0 +1,13 @@
+server:
+  port: 9003
+
+spring:
+  application:
+    name: car-supplier-mock
+
+logging:
+  level:
+    com.travelconnect: DEBUG
+    org.springframework.ws: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [${spring.application.name}] %logger{36} - %msg%n"

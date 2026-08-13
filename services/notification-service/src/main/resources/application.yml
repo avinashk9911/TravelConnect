@@ -1,0 +1,51 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:travelconnect}
+    password: ${RABBITMQ_PASSWORD:travelconnect}
+    listener:
+      simple:
+        retry:
+          # Retry failed message processing up to 3 times before sending to DLQ.
+          # Initial wait: 2 s, then 4 s, then 8 s (multiplier 2.0).
+          enabled: true
+          initial-interval: 2000
+          max-attempts: 3
+          multiplier: 2.0
+        # Do NOT requeue rejected messages — let the DLQ handle them.
+        default-requeue-rejected: false
+
+# ── AWS / Lambda configuration ────────────────────────────────────────────────
+# aws.enabled=false by default so the service runs without AWS credentials locally.
+# Set AWS_ENABLED=true (and provide real credentials) when deploying to AWS.
+aws:
+  enabled: ${AWS_ENABLED:false}
+  region: ${AWS_REGION:eu-west-1}
+  lambda:
+    function-name: ${LAMBDA_FUNCTION_NAME:travelconnect-booking-audit}
+
+# ── Spring Actuator ───────────────────────────────────────────────────────────
+# Exposes /actuator/health, /actuator/metrics, /actuator/threaddump,
+# and /actuator/heapdump (used alongside the perf-test endpoint for demos).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,threaddump,heapdump
+  endpoint:
+    health:
+      show-details: always
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.travelconnect: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [${spring.application.name}] %logger{36} - %msg%n"

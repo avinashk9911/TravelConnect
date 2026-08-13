@@ -1,0 +1,117 @@
+pipeline {
+    agent any
+
+    environment {
+        JAVA_HOME = tool name: 'JDK-21', type: 'jdk'
+        MAVEN_HOME = tool name: 'Maven-3.9', type: 'maven'
+        PATH = "${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${env.PATH}"
+        // Docker registry — update with your actual registry
+        DOCKER_REGISTRY = 'your-registry/travelconnect'
+        // SonarQube configuration
+        SONAR_PROJECT_KEY = 'travelconnect'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "Building branch: ${env.BRANCH_NAME}"
+                echo "Build number: ${env.BUILD_NUMBER}"
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                sh 'mvn clean compile -B --no-transfer-progress'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                sh 'mvn test -B --no-transfer-progress'
+            }
+            post {
+                always {
+                    junit testResults: '**/target/surefire-reports/*.xml',
+                          allowEmptyResults: true
+                }
+            }
+        }
+
+        stage('Integration Tests') {
+            steps {
+                // Requires Docker running on Jenkins agent for Testcontainers
+                sh 'mvn verify -P integration-test -B --no-transfer-progress'
+            }
+            post {
+                always {
+                    junit testResults: '**/target/failsafe-reports/*.xml',
+                          allowEmptyResults: true
+                }
+            }
+        }
+
+        stage('Code Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.projectName="TravelConnect" \
+                            -B --no-transfer-progress
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh 'mvn package -DskipTests -B --no-transfer-progress'
+                archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+            }
+        }
+
+        stage('Docker Build') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
+            }
+            steps {
+                script {
+                    def services = ['traveler-service', 'booking-service', 'integration-service', 'notification-service']
+                    services.each { service ->
+                        sh """
+                            docker build \
+                                -t ${DOCKER_REGISTRY}/${service}:${env.BUILD_NUMBER} \
+                                -t ${DOCKER_REGISTRY}/${service}:latest \
+                                -f services/${service}/Dockerfile \
+                                services/${service}/
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo "Build ${env.BUILD_NUMBER} succeeded on branch ${env.BRANCH_NAME}"
+        }
+        failure {
+            echo "Build ${env.BUILD_NUMBER} FAILED on branch ${env.BRANCH_NAME}"
+        }
+    }
+}

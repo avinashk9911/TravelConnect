@@ -1,0 +1,27 @@
+{
+  "name": "travelconnect-infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "travelconnect-infrastructure": "bin/travelconnect-infrastructure.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "22.7.7",
+    "aws-cdk": "2.161.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.4",
+    "typescript": "~5.6.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.161.1",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  }
+}

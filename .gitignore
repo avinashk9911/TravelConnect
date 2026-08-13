@@ -1,0 +1,43 @@
+# Maven
+target/
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.classpath
+*.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Spring Boot
+*.log
+logs/
+
+# Environment / secrets — never commit these
+.env
+*.env
+application-local.yml
+application-secrets.yml
+
+# Node / frontend
+node_modules/
+dist/
+build/
+frontend/.env.local
+
+# Docker
+docker/data/
+
+# AWS CDK
+aws/travelconnect-infrastructure/cdk.out/
+aws/travelconnect-infrastructure/node_modules/

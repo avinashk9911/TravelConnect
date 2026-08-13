@@ -1,0 +1,203 @@
+version: '3.9'
+
+# Full TravelConnect stack — starts everything including all services.
+# Usage: docker compose -f docker/docker-compose.yml up --build
+#
+# For faster dev iteration, use docker-compose.infra.yml to start only
+# PostgreSQL and RabbitMQ, then run services from your IDE.
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: travelconnect-postgres
+    environment:
+      POSTGRES_DB: travelconnect
+      POSTGRES_USER: travelconnect
+      POSTGRES_PASSWORD: travelconnect
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelconnect"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - travelconnect-network
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: travelconnect-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: travelconnect
+      RABBITMQ_DEFAULT_PASS: travelconnect
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - travelconnect-network
+
+  # ── Backend Services ─────────────────────────────────────────────────────────
+  traveler-service:
+    build:
+      context: ../services/traveler-service
+      dockerfile: Dockerfile
+    container_name: travelconnect-traveler
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: travelconnect
+      DB_USERNAME: travelconnect
+      DB_PASSWORD: travelconnect
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  booking-service:
+    build:
+      context: ../services/booking-service
+      dockerfile: Dockerfile
+    container_name: travelconnect-booking
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: travelconnect
+      DB_USERNAME: travelconnect
+      DB_PASSWORD: travelconnect
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: travelconnect
+      RABBITMQ_PASSWORD: travelconnect
+      FLIGHT_SUPPLIER_URL: http://flight-supplier:9001
+      HOTEL_SUPPLIER_URL: http://hotel-supplier:9002
+      CAR_SUPPLIER_URL: http://car-supplier:9003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  integration-service:
+    build:
+      context: ../services/integration-service
+      dockerfile: Dockerfile
+    container_name: travelconnect-integration
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: travelconnect
+      DB_USERNAME: travelconnect
+      DB_PASSWORD: travelconnect
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: travelconnect
+      RABBITMQ_PASSWORD: travelconnect
+      FLIGHT_SUPPLIER_URL: http://flight-supplier:9001
+      HOTEL_SUPPLIER_URL: http://hotel-supplier:9002
+      CAR_SUPPLIER_URL: http://car-supplier:9003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    container_name: travelconnect-notification
+    ports:
+      - "8084:8084"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: travelconnect
+      RABBITMQ_PASSWORD: travelconnect
+      AWS_ENABLED: "false"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  # ── Mock Suppliers ──────────────────────────────────────────────────────────
+  flight-supplier:
+    build:
+      context: ../mock-suppliers/flight-supplier
+      dockerfile: Dockerfile
+    container_name: travelconnect-flight-supplier
+    ports:
+      - "9001:9001"
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  hotel-supplier:
+    build:
+      context: ../mock-suppliers/hotel-supplier
+      dockerfile: Dockerfile
+    container_name: travelconnect-hotel-supplier
+    ports:
+      - "9002:9002"
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  car-supplier:
+    build:
+      context: ../mock-suppliers/car-supplier
+      dockerfile: Dockerfile
+    container_name: travelconnect-car-supplier
+    ports:
+      - "9003:9003"
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: travelconnect-frontend
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8082
+    depends_on:
+      - booking-service
+      - traveler-service
+    networks:
+      - travelconnect-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+
+networks:
+  travelconnect-network:
+    driver: bridge

@@ -1,0 +1,77 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: traveler-service
+
+  # ── Database ──────────────────────────────────────────────────────────────
+  datasource:
+    # ${VAR:default} syntax: reads env var VAR, falls back to 'default' if not set.
+    # This means: production passes real values via env vars; local dev uses defaults.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:travelconnect}
+    username: ${DB_USERNAME:travelconnect}
+    password: ${DB_PASSWORD:travelconnect}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # HikariCP is the connection pool bundled with Spring Boot.
+      # These values are appropriate for a small service in development.
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      pool-name: TravelerServicePool
+
+  # ── JPA / Hibernate ───────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      # validate: Hibernate checks the schema matches the entities but does NOT modify it.
+      # Flyway manages the schema — never let Hibernate create or drop tables in production.
+      ddl-auto: validate
+    show-sql: false   # set to true temporarily while debugging — noisy in production
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+
+  # ── Flyway (database migrations) ──────────────────────────────────────────
+  # Flyway runs SQL scripts in src/main/resources/db/migration on startup.
+  # Script naming: V{version}__{description}.sql e.g. V1__create_travelers_table.sql
+  # Once a script is applied it's recorded in the flyway_schema_history table and never re-run.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# ── Spring Actuator ───────────────────────────────────────────────────────────
+# Actuator exposes operational endpoints: /actuator/health, /actuator/metrics etc.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always   # in production: when-authorized
+  info:
+    env:
+      enabled: true
+
+# Info shown at /actuator/info
+info:
+  app:
+    name: TravelConnect Traveler Service
+    version: 1.0.0
+    description: Manages corporate traveler profiles
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.travelconnect: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql: WARN
+  pattern:
+    # Include the application name and thread name for easier log filtering.
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [${spring.application.name}] %logger{36} - %msg%n"

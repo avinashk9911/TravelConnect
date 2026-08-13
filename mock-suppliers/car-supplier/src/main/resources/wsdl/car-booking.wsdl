@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://travelconnect.com/car-supplier"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="http://travelconnect.com/car-supplier"
+                  name="CarBookingService">
+
+    <wsdl:types>
+        <xs:schema targetNamespace="http://travelconnect.com/car-supplier">
+            <xs:element name="CreateCarBookingRequest">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="bookingId"       type="xs:string"/>
+                        <xs:element name="traceId"         type="xs:string"/>
+                        <xs:element name="pickupLocation"  type="xs:string"/>
+                        <xs:element name="dropoffLocation" type="xs:string"/>
+                        <xs:element name="pickupDate"      type="xs:date"/>
+                        <xs:element name="returnDate"      type="xs:date"    minOccurs="0"/>
+                        <xs:element name="driverCount"     type="xs:integer"/>
+                        <xs:element name="currency"        type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="CreateCarBookingResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="referenceId"     type="xs:string"  minOccurs="0"/>
+                        <xs:element name="bookingId"       type="xs:string"/>
+                        <xs:element name="status"          type="xs:string"/>
+                        <xs:element name="confirmedPrice"  type="xs:decimal" minOccurs="0"/>
+                        <xs:element name="currency"        type="xs:string"/>
+                        <xs:element name="errorCode"       type="xs:string"  minOccurs="0"/>
+                        <xs:element name="errorMessage"    type="xs:string"  minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="CreateCarBookingRequest">
+        <wsdl:part name="parameters" element="tns:CreateCarBookingRequest"/>
+    </wsdl:message>
+    <wsdl:message name="CreateCarBookingResponse">
+        <wsdl:part name="parameters" element="tns:CreateCarBookingResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="CarBookingPort">
+        <wsdl:operation name="createCarBooking">
+            <wsdl:input  message="tns:CreateCarBookingRequest"/>
+            <wsdl:output message="tns:CreateCarBookingResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="CarBookingBinding" type="tns:CarBookingPort">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="createCarBooking">
+            <soap:operation soapAction="urn:createCarBooking"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="CarBookingService">
+        <wsdl:port name="CarBookingPort" binding="tns:CarBookingBinding">
+            <soap:address location="http://localhost:9003/ws/car-booking"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>

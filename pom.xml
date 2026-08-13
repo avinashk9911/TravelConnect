@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- All services inherit Spring Boot's curated dependency versions -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.travelconnect</groupId>
+    <artifactId>travelconnect-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>TravelConnect Parent</name>
+    <description>Travel Booking and Supplier Integration Platform</description>
+
+    <!--
+        Active modules — we add each service here as we build it.
+        Maven will build them in the order listed.
+    -->
+    <modules>
+        <module>services/traveler-service</module>
+        <module>services/booking-service</module>
+        <module>services/integration-service</module>
+        <module>services/notification-service</module>
+        <module>mock-suppliers/flight-supplier</module>
+        <module>mock-suppliers/hotel-supplier</module>
+        <module>mock-suppliers/car-supplier</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Library versions pinned here so every child module uses the same -->
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <lombok.version>1.18.34</lombok.version>
+        <testcontainers.version>1.20.3</testcontainers.version>
+        <flyway.version>10.20.1</flyway.version>
+    </properties>
+
+    <!--
+        dependencyManagement: declares versions WITHOUT adding dependencies.
+        Child modules still have to list the dependency — but they don't need
+        to repeat the version. This prevents version drift across services.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Testcontainers BOM keeps all testcontainers modules in sync -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- Plugins applied to every child module -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <excludes>
+                            <!-- Lombok is compile-only; exclude from the fat jar -->
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>21</source>
+                        <target>21</target>
+                        <annotationProcessorPaths>
+                            <!-- Lombok must be processed before MapStruct -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

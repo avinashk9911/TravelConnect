@@ -1,0 +1,49 @@
+version: '3.9'
+
+# ── Infrastructure services only ──────────────────────────────────────────────
+# Use this during development to start just PostgreSQL and RabbitMQ,
+# then run each Spring Boot service from your IDE for faster iteration.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.infra.yml up -d
+#   docker compose -f docker/docker-compose.infra.yml down
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: travelconnect-postgres
+    environment:
+      POSTGRES_DB: travelconnect
+      POSTGRES_USER: travelconnect
+      POSTGRES_PASSWORD: travelconnect
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelconnect"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: travelconnect-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: travelconnect
+      RABBITMQ_DEFAULT_PASS: travelconnect
+    ports:
+      - "5672:5672"    # AMQP protocol port
+      - "15672:15672"  # Management UI — open http://localhost:15672 in browser
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
